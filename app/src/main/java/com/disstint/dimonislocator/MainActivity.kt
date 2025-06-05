@@ -66,7 +66,7 @@ fun LocationButtons(onStart: () -> Unit, onStop: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(100.dp)
     ) {
         Button(onClick = onStart) {
             Text(text = "Arrancar Seguiment")
