@@ -18,7 +18,7 @@ class DefaultLocationClient(
     private val client: FusedLocationProviderClient
 ): LocationClient {
     override fun getLocationUpdates(interval: Long): Flow<Location> {
-        return callbackFlow {
+        return callbackFlow @androidx.annotation.RequiresPermission(allOf = [android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION]) {
             if(!context.hasLocationPermission()) {
                 throw LocationClient.LocationException("No se han otorgado permisos")
             }

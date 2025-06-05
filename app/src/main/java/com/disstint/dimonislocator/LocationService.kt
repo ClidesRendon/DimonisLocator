@@ -1,6 +1,5 @@
 package com.disstint.dimonislocator
 
-import android.app.Notification
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
@@ -56,7 +55,7 @@ class LocationService: Service() {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         locationClient
-            .getLocationUpdates(50000L) //ACTUALIZACION DE LOCATION CADA 5 SEGUNDOS
+            .getLocationUpdates(5000L) //ACTUALIZACION DE LOCATION CADA 5 SEGUNDOS
             .catch { e -> e.printStackTrace() } //HACER PRINT DE POSIBLES EXCEPCIONES
             .onEach { location ->
                 val lat = location.latitude.toString() //OBTENER LATITUD Y CONVERTIR A STRING
