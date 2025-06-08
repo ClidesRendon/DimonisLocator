@@ -4,9 +4,14 @@
     <selectionStates>
       <SelectionState runConfigName="DimonisLocator">
         <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
-      <SelectionState runConfigName="app">
-        <option name="selectionMode" value="DROPDOWN" />
+        <DropdownSelection timestamp="2025-06-06T07:02:42.770346700Z">
+          <Target type="DEFAULT_BOOT">
+            <handle>
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\xavir\.android\avd\Pixel_6.avd" />
+            </handle>
+          </Target>
+        </DropdownSelection>
+        <DialogSelection />
       </SelectionState>
     </selectionStates>
   </component>

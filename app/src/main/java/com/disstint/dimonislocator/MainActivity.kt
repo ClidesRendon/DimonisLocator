@@ -1,20 +1,22 @@
 package com.disstint.dimonislocator
 
 import android.Manifest
+import android.app.ActivityManager
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
@@ -22,60 +24,140 @@ import androidx.core.content.ContextCompat
 
 class MainActivity : ComponentActivity() {
 
+    private val PERMISSION_REQUEST_CODE = 100
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Solicitar permisos de ubicación + fondo (según la versión de Android)
-        val permissions = mutableListOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        if (!hasRequiredPermissions()) {
+            ActivityCompat.requestPermissions(
+                this,
+                getRequiredPermissions().toTypedArray(),
+                PERMISSION_REQUEST_CODE
+            )
         }
 
-        ActivityCompat.requestPermissions(
-            this,
-            permissions.toTypedArray(),
-            0
-        )
-
         setContent {
-            MaterialTheme {
-                LocationButtons(
-                    onStart = {
+            var isServiceRunning by remember { mutableStateOf(isLocationServiceRunning()) }
+
+            LaunchedEffect(Unit) {
+                isServiceRunning = isLocationServiceRunning()
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(100.dp)
+            ) {
+                Text(text = if (isServiceRunning) "Servicio activo" else "Servicio detenido")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(onClick = {
+                    if (hasRequiredPermissions()) {
                         Intent(applicationContext, LocationService::class.java).apply {
                             action = LocationService.ACTION_START
                             ContextCompat.startForegroundService(applicationContext, this)
                         }
-                    },
-                    onStop = {
-                        Intent(applicationContext, LocationService::class.java).apply {
-                            action = LocationService.ACTION_STOP
-                            startService(this)
-                        }
+                        isServiceRunning = true
+                    } else {
+                        Toast.makeText(this@MainActivity, "Permisos no concedidos", Toast.LENGTH_LONG).show()
                     }
-                )
+                }) {
+                    Text(text = "Arrancar Seguiment")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(onClick = {
+                    Intent(applicationContext, LocationService::class.java).apply {
+                        action = LocationService.ACTION_STOP
+                        startService(this)
+                    }
+                    isServiceRunning = false
+                }) {
+                    Text(text = "Aturar Seguiment")
+                }
+            }
+        }
+    }
+
+    private fun getRequiredPermissions(): List<String> {
+        val permissions = mutableListOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.FOREGROUND_SERVICE
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            permissions.add(Manifest.permission.FOREGROUND_SERVICE_LOCATION)
+        }
+        return permissions
+    }
+
+    private fun hasRequiredPermissions(): Boolean {
+        return getRequiredPermissions().all {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    private fun isLocationServiceRunning(): Boolean {
+        val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        return manager.getRunningServices(Int.MAX_VALUE).any {
+            it.service.className == LocationService::class.java.name
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                Toast.makeText(this, "Permisos concedidos", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Permisos denegados", Toast.LENGTH_LONG).show()
             }
         }
     }
 }
 
+
+
 @Composable
-fun LocationButtons(onStart: () -> Unit, onStop: () -> Unit) {
+fun LocationButtons(
+    isTracking: Boolean,
+    onStart: () -> Unit,
+    onStop: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(100.dp)
+            .padding(100.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Button(onClick = onStart) {
+        Text(
+            text = if (isTracking) "Seguiment Actiu" else "Seguiment Inactiu",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
+
+        Button(onClick = onStart, enabled = !isTracking) {
             Text(text = "Arrancar Seguiment")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = onStop) {
+        Button(onClick = onStop, enabled = isTracking) {
             Text(text = "Aturar Seguiment")
         }
     }
 }
+
