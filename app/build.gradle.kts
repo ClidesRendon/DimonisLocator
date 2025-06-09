@@ -49,6 +49,7 @@ android {
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.material.v1140alpha01)
+    implementation(libs.okhttp)
     //implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     //implementation(libs.androidx.compose.material3)
@@ -57,5 +58,15 @@ dependencies {
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.material3.android)
     implementation(libs.play.services.location)
+    implementation("io.ktor:ktor-server-core:2.3.4")
+    implementation("io.ktor:ktor-server-netty:2.3.4")
+    implementation("io.ktor:ktor-server-content-negotiation:2.3.4")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.4")
+    implementation("org.jetbrains.exposed:exposed-core:0.41.1")
+    implementation("org.jetbrains.exposed:exposed-dao:0.41.1")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.41.1")
+    implementation("mysql:mysql-connector-java:8.0.33")
+    implementation("ch.qos.logback:logback-classic:1.4.11")
+}
 }
 

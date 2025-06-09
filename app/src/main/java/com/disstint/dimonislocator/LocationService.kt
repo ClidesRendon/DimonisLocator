@@ -17,12 +17,19 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.WebSocket
+import okhttp3.WebSocketListener
+import okio.ByteString
+import org.json.JSONObject
 
 
 class LocationService : Service() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var locationClient: LocationClient
+    private lateinit var webSocket: WebSocket
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -32,6 +39,7 @@ class LocationService : Service() {
             applicationContext,
             LocationServices.getFusedLocationProviderClient(applicationContext)
         )
+        initWebSocket()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -58,11 +66,12 @@ class LocationService : Service() {
             .getLocationUpdates(5000L)
             .catch { it.printStackTrace() }
             .onEach { location ->
-                val lat = location.latitude
-                val lon = location.longitude
-                val updatedNotification = notificationBuilder
-                    .setContentText("Localización: ($lat, $lon)")
-                notificationManager.notify(1, updatedNotification.build())
+                val json = JSONObject()
+                json.put("latitude", location.latitude)
+                json.put("longitude", location.longitude)
+                json.put("timestamp", System.currentTimeMillis())
+
+                webSocket.send(json.toString())
             }
             .launchIn(serviceScope)
 
@@ -98,5 +107,23 @@ class LocationService : Service() {
     companion object {
         const val ACTION_START = "ACTION_START"
         const val ACTION_STOP = "ACTION_STOP"
+    }
+
+    private fun initWebSocket() {
+        val client = OkHttpClient()
+        val request = Request.Builder().url("ws://TU_IP_LOCAL_O_PUBLICA:3000").build()
+        webSocket = client.newWebSocket(request, object : WebSocketListener() {
+            override fun onOpen(webSocket: WebSocket, response: okhttp3.Response) {
+                println("WebSocket abierto")
+            }
+
+            override fun onMessage(webSocket: WebSocket, text: String) {
+                println("Mensaje del servidor: $text")
+            }
+
+            override fun onFailure(webSocket: WebSocket, t: Throwable, response: okhttp3.Response?) {
+                t.printStackTrace()
+            }
+        })
     }
 }
