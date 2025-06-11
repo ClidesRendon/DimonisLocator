@@ -110,7 +110,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @Suppress("DEPRECATION")
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,

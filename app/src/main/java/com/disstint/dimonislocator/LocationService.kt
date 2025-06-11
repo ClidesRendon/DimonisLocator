@@ -17,6 +17,14 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
+import java.io.IOException
 
 
 class LocationService : Service() {
@@ -26,7 +34,12 @@ class LocationService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+
+
     override fun onCreate() {
+
+
+
         super.onCreate()
         locationClient = DefaultLocationClient(
             applicationContext,
@@ -58,6 +71,30 @@ class LocationService : Service() {
             .getLocationUpdates(5000L)
             .catch { it.printStackTrace() }
             .onEach { location ->
+
+                val client = OkHttpClient()
+
+                val json = """
+    {
+        "lat": ${location.latitude},
+        "lon": ${location.longitude}
+    }
+""".trimIndent()
+
+                val request = Request.Builder()
+                    .url("http://TU_IP_LOCAL_O_PUBLICA:3000/update-location") // Ajusta IP
+                    .post(json.toRequestBody("application/json".toMediaType()))
+                    .build()
+
+                client.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        e.printStackTrace()
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        println("Ubicación enviada")
+                    }
+                })
                 val lat = location.latitude
                 val lon = location.longitude
                 val updatedNotification = notificationBuilder
@@ -99,4 +136,8 @@ class LocationService : Service() {
         const val ACTION_START = "ACTION_START"
         const val ACTION_STOP = "ACTION_STOP"
     }
+
 }
+
+
+

@@ -49,6 +49,8 @@ android {
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.material.v1140alpha01)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
     //implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     //implementation(libs.androidx.compose.material3)
