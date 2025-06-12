@@ -59,5 +59,7 @@ dependencies {
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.material3.android)
     implementation(libs.play.services.location)
+    implementation(libs.androidx.monitor)
+    implementation(libs.androidx.junit.ktx)
 }
 

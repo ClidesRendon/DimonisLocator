@@ -81,8 +81,11 @@ class LocationService : Service() {
     }
 """.trimIndent()
 
+                //Enviar coordenadas a url de prod
                 val request = Request.Builder()
-                    .url("http://TU_IP_LOCAL_O_PUBLICA:3000/update-location") // Ajusta IP
+                    //.url("http://localhost:3000")
+
+                    .url("home474825489.1and1-data.host") // Ajustar IP
                     .post(json.toRequestBody("application/json".toMediaType()))
                     .build()
 

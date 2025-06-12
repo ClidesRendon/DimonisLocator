@@ -5,7 +5,8 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
-const PORT = 3000;
+//PORT = 3000;
+const PORT = home474825489.1and1-data.host;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -34,5 +35,5 @@ app.get('/location.json', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🌍 Servidor iniciado en http://localhost:${PORT}`);
+  console.log(`🌍 Servidor iniciado en http:localhost:${PORT}`);
 });
