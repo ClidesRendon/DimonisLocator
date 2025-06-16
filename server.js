@@ -6,13 +6,13 @@ const cors = require('cors');
 
 const app = express();
 //PORT = 3000;
-const PORT = "3000";
+const PORT = 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-const LOCATION_FILE = path.join(__dirname, 'location.json');
+const LOCATION_FILE = path.join(__dirname, './location.json');
 
 // Endpoint para recibir ubicación
 app.post('/update-location', (req, res) => {
@@ -26,7 +26,7 @@ app.post('/update-location', (req, res) => {
 });
 
 // Endpoint para devolver la ubicación
-app.get('/location.json', (req, res) => {
+app.get('./location.json', (req, res) => {
   if (fs.existsSync(LOCATION_FILE)) {
     res.sendFile(LOCATION_FILE);
   } else {

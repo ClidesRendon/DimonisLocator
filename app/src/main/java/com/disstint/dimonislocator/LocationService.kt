@@ -86,7 +86,7 @@ class LocationService : Service() {
                     .url("http://localhost:3000")
 
                     //.url("home474825489.1and1-data.host") // Ajustar IP
-                    .post(json.toRequestBody("application/json".toMediaType()))
+                    .post(json.toRequestBody(".application/json".toMediaType()))
                     .build()
 
                 client.newCall(request).enqueue(object : Callback {

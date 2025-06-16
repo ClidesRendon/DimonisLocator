@@ -12,18 +12,66 @@
   <style>
     body, html { margin: 0; padding: 0; height: 100%; }
     #map { height: 100vh; }
+
+    #btnsSeg {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      text-align: center;
+      transition: opacity 0.5s ease;
+    }
+
+    #btnsSeg button {
+      margin: 5px;
+      padding: 8px 16px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background-color: #2c3e50;
+      color: white;
+    }
+
+    #btnsSeg button:hover {
+      background-color: #34495e;
+    }
+
+    #estadoSeg {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .activo {
+      color: green;
+    }
+
+    .inactivo {
+      color: red;
+    }
+
+    .oculto {
+      opacity: 0;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
 
-  <div id="btnsSeg">
-      <button id="activarSeg">Activar Seguiment</button>
-      <button id="aturarSeg">Desactivar Seguiment</button>
-  </div>
+<div id="btnsSeg">
+  <button id="activarSeg">Activar Seguiment</button>
+  <button id="aturarSeg">Desactivar Seguiment</button>
+  <p id="estadoSeg" class="inactivo">Seguiment desactivat</p>
+</div>
+
 <div id="map"></div>
 
 <script>
-
   const map = L.map('map').setView([0, 0], 2);
   const marker = L.marker([0, 0]).addTo(map).bindPopup("Esperando ubicación...");
 
@@ -31,17 +79,63 @@
     attribution: '© OpenStreetMap contributors'
   }).addTo(map);
 
-  async function actualizar() {
-    const res = await fetch('/location.json');
-    const data = await res.json();
-    const latLng = [data.lat, data.lon];
-    marker.setLatLng(latLng)
-          .setPopupContent(`📍 (${data.lat.toFixed(5)}, ${data.lon.toFixed(5)})`)
-          .openPopup();
-    map.setView(latLng, 16);
+  let intervaloID = null;
+  const estadoSeg = document.getElementById("estadoSeg");
+  const contenedorBtns = document.getElementById("btnsSeg");
+
+  function ocultarControles() {
+    setTimeout(() => {
+      contenedorBtns.classList.add("oculto");
+    }, 3000);
   }
 
-  setInterval(actualizar, 5000);
+  function mostrarControles() {
+    contenedorBtns.classList.remove("oculto");
+  }
+
+  async function actualizar() {
+    try {
+      const res = await fetch('/location.json');
+      if (!res.ok) throw new Error("No se pudo cargar location.json");
+
+      const data = await res.json();
+      const latLng = [data.lat, data.lon];
+      marker.setLatLng(latLng)
+            .setPopupContent(`📍 (${data.lat.toFixed(5)}, ${data.lon.toFixed(5)})`)
+            .openPopup();
+      map.setView(latLng, 16);
+    } catch (error) {
+      console.error("Error al actualizar ubicación:", error);
+    }
+  }
+
+  document.getElementById("activarSeg").addEventListener("click", () => {
+    if (!intervaloID) {
+      actualizar();
+      intervaloID = setInterval(actualizar, 5000);
+      estadoSeg.textContent = "Seguiment activat";
+      estadoSeg.classList.remove("inactivo");
+      estadoSeg.classList.add("activo");
+      ocultarControles();
+    }
+  });
+
+  document.getElementById("aturarSeg").addEventListener("click", () => {
+    if (intervaloID) {
+      clearInterval(intervaloID);
+      intervaloID = null;
+      estadoSeg.textContent = "Seguiment desactivat";
+      estadoSeg.classList.remove("activo");
+      estadoSeg.classList.add("inactivo");
+      ocultarControles();
+    }
+  });
+
+  // Mostrar controles al hacer clic en el mapa
+  map.on('click', () => {
+    mostrarControles();
+  });
 </script>
+
 </body>
 </html>
