@@ -83,9 +83,9 @@ class LocationService : Service() {
 
                 //Enviar coordenadas a url de prod
                 val request = Request.Builder()
-                    //.url("http://localhost:3000")
+                    .url("http://localhost:3000")
 
-                    .url("home474825489.1and1-data.host") // Ajustar IP
+                    //.url("home474825489.1and1-data.host") // Ajustar IP
                     .post(json.toRequestBody("application/json".toMediaType()))
                     .build()
 

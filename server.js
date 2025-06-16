@@ -6,7 +6,7 @@ const cors = require('cors');
 
 const app = express();
 //PORT = 3000;
-const PORT = home474825489.1and1-data.host;
+const PORT = "3000";
 
 app.use(cors());
 app.use(bodyParser.json());
