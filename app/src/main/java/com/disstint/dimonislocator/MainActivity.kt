@@ -72,8 +72,9 @@ class MainActivity : ComponentActivity() {
                 Button(onClick = {
                     Intent(applicationContext, LocationService::class.java).apply {
                         action = LocationService.ACTION_STOP
-                        startService(this)
+                        ContextCompat.startForegroundService(applicationContext, this)
                     }
+
                     isServiceRunning = false
                 }) {
                     Text(text = "Aturar Seguiment")

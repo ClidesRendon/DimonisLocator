@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.CoroutineScope
@@ -48,14 +49,25 @@ class LocationService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d("LocationService", "onStartCommand recibido: ${intent?.action}")
+
         when (intent?.action) {
-            ACTION_START -> start()
-            ACTION_STOP -> stop()
+            ACTION_START -> {
+                Log.d("LocationService", "Iniciando seguimiento...")
+                start()
+            }
+            ACTION_STOP -> {
+                Log.d("LocationService", "Deteniendo seguimiento...")
+                stop()
+            }
         }
         return START_STICKY
     }
 
+
     private fun start() {
+
+
         createNotificationChannel()
 
         val notificationBuilder = NotificationCompat.Builder(this, "location")
@@ -67,6 +79,12 @@ class LocationService : Service() {
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(1, notificationBuilder.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
+        } else {
+            startForeground(1, notificationBuilder.build())
+        }
+
         locationClient
             .getLocationUpdates(5000L)
             .catch { it.printStackTrace() }
@@ -75,18 +93,15 @@ class LocationService : Service() {
                 val client = OkHttpClient()
 
                 val json = """
-    {
-        "lat": ${location.latitude},
-        "lon": ${location.longitude}
-    }
-""".trimIndent()
+                {
+                    "lat": ${location.latitude},
+                    "lon": ${location.longitude}
+                }
+            """.trimIndent()
 
-                //Enviar coordenadas a url de prod
                 val request = Request.Builder()
-                    .url("http://localhost:3000")
-
-                    //.url("home474825489.1and1-data.host") // Ajustar IP
-                    .post(json.toRequestBody(".application/json".toMediaType()))
+                    .url("http://10.0.2.2:3001/update-location") // ✅ URL correcta para emulador
+                    .post(json.toRequestBody("application/json".toMediaType())) // ✅ Content-Type correcto
                     .build()
 
                 client.newCall(request).enqueue(object : Callback {
@@ -95,9 +110,10 @@ class LocationService : Service() {
                     }
 
                     override fun onResponse(call: Call, response: Response) {
-                        println("Ubicación enviada")
+                        println("✅ Ubicación enviada: $json")
                     }
                 })
+
                 val lat = location.latitude
                 val lon = location.longitude
                 val updatedNotification = notificationBuilder
@@ -106,12 +122,9 @@ class LocationService : Service() {
             }
             .launchIn(serviceScope)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(1, notificationBuilder.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
-        } else {
-            startForeground(1, notificationBuilder.build())
-        }
+
     }
+
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

@@ -93,21 +93,39 @@
     contenedorBtns.classList.remove("oculto");
   }
 
-  async function actualizar() {
-    try {
-      const res = await fetch('/location.json');
-      if (!res.ok) throw new Error("No se pudo cargar location.json");
 
-      const data = await res.json();
-      const latLng = [data.lat, data.lon];
-      marker.setLatLng(latLng)
-            .setPopupContent(`📍 (${data.lat.toFixed(5)}, ${data.lon.toFixed(5)})`)
-            .openPopup();
-      map.setView(latLng, 16);
-    } catch (error) {
-      console.error("Error al actualizar ubicación:", error);
+
+ let polyline = null;
+
+async function actualizar() {
+  try {
+    const res = await fetch('/location.json');
+    if (!res.ok) throw new Error("No se pudo cargar location.json");
+
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) return;
+
+    const last = data[data.length - 1];
+    const latLng = [last.lat, last.lon];
+
+    marker.setLatLng(latLng)
+          .setPopupContent(`📍 (${last.lat.toFixed(5)}, ${last.lon.toFixed(5)})`)
+          .openPopup();
+    map.setView(latLng, 16);
+
+    // Dibujar ruta
+    const ruta = data.map(p => [p.lat, p.lon]);
+    if (polyline) {
+      polyline.setLatLngs(ruta);
+    } else {
+      polyline = L.polyline(ruta, { color: 'blue', weight: 4 }).addTo(map);
     }
+
+  } catch (error) {
+    console.error("Error al actualizar ubicación:", error);
   }
+}
+
 
   document.getElementById("activarSeg").addEventListener("click", () => {
     if (!intervaloID) {
@@ -120,16 +138,33 @@
     }
   });
 
-  document.getElementById("aturarSeg").addEventListener("click", () => {
-    if (intervaloID) {
-      clearInterval(intervaloID);
-      intervaloID = null;
-      estadoSeg.textContent = "Seguiment desactivat";
-      estadoSeg.classList.remove("activo");
-      estadoSeg.classList.add("inactivo");
-      ocultarControles();
+  document.getElementById("aturarSeg").addEventListener("click", async () => {
+  if (intervaloID) {
+    clearInterval(intervaloID);
+    intervaloID = null;
+
+    estadoSeg.textContent = "Seguiment desactivat";
+    estadoSeg.classList.remove("activo");
+    estadoSeg.classList.add("inactivo");
+
+    // Borrar ruta del mapa
+    if (polyline) {
+      map.removeLayer(polyline);
+      polyline = null;
     }
-  });
+
+    // Notificar al servidor que limpie el archivo
+    try {
+      await fetch('/clear-location', { method: 'POST' });
+      console.log("Ruta eliminada del servidor");
+    } catch (err) {
+      console.error("Error al limpiar ubicación:", err);
+    }
+
+    ocultarControles();
+  }
+});
+
 
   // Mostrar controles al hacer clic en el mapa
   map.on('click', () => {
