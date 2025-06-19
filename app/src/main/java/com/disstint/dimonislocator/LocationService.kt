@@ -9,6 +9,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.CoroutineScope
@@ -25,6 +26,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import org.json.JSONObject
 import java.io.IOException
 
 
@@ -90,16 +92,28 @@ class LocationService : Service() {
             .catch { it.printStackTrace() }
             .onEach { location ->
 
+                println("📍 Recibida nueva localización: ${location.latitude}, ${location.longitude}")
+                Toast.makeText(this, "Ubicación: ${location.latitude}, ${location.longitude}", Toast.LENGTH_SHORT).show()
+
                 val client = OkHttpClient()
 
-                val json = """
-                {
-                    "lat": ${location.latitude},
-                    "lon": ${location.longitude}
+                /*val jsonObj = JSONObject().apply {
+                    put("lat", location.latitude)
+                    put("lon", location.longitude)
                 }
-            """.trimIndent()
+                val json = jsonObj.toString()*/
 
-                val request = Request.Builder()
+                val jsonObj = JSONObject().apply {
+                    put("lat", location.latitude)
+                    put("lon", location.longitude)
+                }
+                val json = jsonObj.toString()
+
+                println("📦 JSON generado: $json")  // <-- Log para depuración
+
+
+
+                /*val request = Request.Builder()
                     .url("http://10.0.2.2:3001/update-location") // ✅ URL correcta para emulador
                     .post(json.toRequestBody("application/json".toMediaType())) // ✅ Content-Type correcto
                     .build()
@@ -112,7 +126,24 @@ class LocationService : Service() {
                     override fun onResponse(call: Call, response: Response) {
                         println("✅ Ubicación enviada: $json")
                     }
+                })*/
+
+                val request = Request.Builder()
+                    .url("http://10.0.2.2:3001/update-location")
+                    .post(json.toRequestBody("application/json".toMediaType()))
+                    .build()
+
+                client.newCall(request).enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        println("❌ Error al enviar ubicación: ${e.message}")
+                    }
+
+                    override fun onResponse(call: Call, response: Response) {
+                        println("✅ Código de respuesta: ${response.code}")
+                        println("✅ Cuerpo de respuesta: ${response.body?.string()}")
+                    }
                 })
+
 
                 val lat = location.latitude
                 val lon = location.longitude

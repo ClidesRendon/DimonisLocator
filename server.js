@@ -17,17 +17,32 @@ const LOCATION_FILE = path.join(__dirname, '/location.json');
 // Función para guardar ubicación
 function guardarUbicacion(lat, lon) {
   let data = [];
-  if (fs.existsSync(LOCATION_FILE)) {
-    try {
-      data = JSON.parse(fs.readFileSync(LOCATION_FILE, 'utf8'));
-      if (!Array.isArray(data)) data = [];
-    } catch {
-      data = [];
+
+  try {
+    if (fs.existsSync(LOCATION_FILE)) {
+      const fileContent = fs.readFileSync(LOCATION_FILE, 'utf8');
+      data = JSON.parse(fileContent);
+
+      // Asegurarnos que es un array
+      if (!Array.isArray(data)) {
+        data = [];
+      }
     }
+  } catch (error) {
+    console.error('Error leyendo/parsing location.json:', error);
+    data = [];
   }
+
+  // Añadir nueva ubicación con timestamp
   data.push({ lat, lon, timestamp: Date.now() });
-  fs.writeFileSync(LOCATION_FILE, JSON.stringify(data, null, 2));
+
+  try {
+    fs.writeFileSync(LOCATION_FILE, JSON.stringify(data, null, 2));
+  } catch (error) {
+    console.error('Error escribiendo location.json:', error);
+  }
 }
+
 
 // Endpoint POST raíz para compatibilidad con la app Android
 app.post('/', (req, res) => {
@@ -71,6 +86,6 @@ app.post('/clear-location', (req, res) => {
   res.send({ status: 'ruta limpiada' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0',() => {
   console.log(`🌍 Servidor iniciado en http://localhost:${PORT}`);
 });

@@ -57,7 +57,7 @@ class DefaultLocationClient(
 
             //ESPERAR CIERRE DE ACTUALIZACIONES
             awaitClose{
-                client.removeLocationUpdates { locationCallback }
+                client.removeLocationUpdates ( locationCallback )
             }
 
         }
