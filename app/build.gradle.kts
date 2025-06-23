@@ -50,15 +50,12 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.material.v1140alpha01)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-
-    //implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.play.services.location.v2101)
     implementation(libs.androidx.activity.compose)
-    //implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.runtime)
     implementation(libs.androidx.ui)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.material3.android)
-    implementation(libs.play.services.location)
     implementation(libs.androidx.monitor)
     implementation(libs.androidx.junit.ktx)
 }

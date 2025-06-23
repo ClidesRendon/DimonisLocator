@@ -29,6 +29,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ),
+            1234
+        )
+
+
         if (!hasRequiredPermissions()) {
             ActivityCompat.requestPermissions(
                 this,
@@ -37,7 +47,10 @@ class MainActivity : ComponentActivity() {
             )
         }
 
+
+
         setContent {
+
             var isServiceRunning by remember { mutableStateOf(isLocationServiceRunning()) }
 
             LaunchedEffect(Unit) {
@@ -53,9 +66,12 @@ class MainActivity : ComponentActivity() {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+
+
                 Button(onClick = {
                     if (hasRequiredPermissions()) {
                         Intent(applicationContext, LocationService::class.java).apply {
+
                             action = LocationService.ACTION_START
                             ContextCompat.startForegroundService(applicationContext, this)
                         }

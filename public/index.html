@@ -73,7 +73,7 @@
 
 <script>
   const map = L.map('map').setView([0, 0], 2);
-  const marker = L.marker([0, 0]).addTo(map).bindPopup("Esperando ubicación...");
+  const marker = L.marker([0, 0]).addTo(map);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
@@ -109,7 +109,7 @@ async function actualizar() {
     const latLng = [last.lat, last.lon];
 
     marker.setLatLng(latLng)
-          .setPopupContent(`📍 (${last.lat.toFixed(5)}, ${last.lon.toFixed(5)})`)
+
           .openPopup();
     map.setView(latLng, 16);
 
@@ -118,7 +118,7 @@ async function actualizar() {
     if (polyline) {
       polyline.setLatLngs(ruta);
     } else {
-      polyline = L.polyline(ruta, { color: 'blue', weight: 4 }).addTo(map);
+      polyline = L.polyline(ruta, { color: 'red', weight: 6 }).addTo(map);
     }
 
   } catch (error) {

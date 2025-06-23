@@ -15,6 +15,7 @@ material3 = "1.2.0"
 materialVersion = "1.14.0-alpha01"
 okhttp = "4.9.3"
 playServicesLocation = "21.3.0"
+playServicesLocationVersion = "21.0.1"
 ui = "1.8.2"
 composeCompiler = "1.5.11"
 runtime = "1.8.2"
@@ -54,6 +55,7 @@ androidx-activity-ktx = { group = "androidx.activity", name = "activity-ktx", ve
 androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android", version.ref = "material3Android" }
 androidx-monitor = { group = "androidx.test", name = "monitor", version.ref = "monitor" }
 androidx-junit-ktx = { group = "androidx.test.ext", name = "junit-ktx", version.ref = "junitKtx" }
+play-services-location-v2101 = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocationVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

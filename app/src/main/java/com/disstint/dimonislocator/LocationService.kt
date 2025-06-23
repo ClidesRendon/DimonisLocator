@@ -1,5 +1,6 @@
 package com.disstint.dimonislocator
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -11,6 +12,7 @@ import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -50,6 +52,7 @@ class LocationService : Service() {
         )
     }
 
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("LocationService", "onStartCommand recibido: ${intent?.action}")
 
@@ -67,7 +70,11 @@ class LocationService : Service() {
     }
 
 
+
     private fun start() {
+        Log.d("Ubicacion", "📡 Solicitud de actualizaciones de ubicación iniciada")
+        Log.d("Ubicacion", "Permiso FINE LOCATION: ${ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)}")
+        Log.d("Ubicacion", "Permiso COARSE LOCATION: ${ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)}")
 
 
         createNotificationChannel()
@@ -87,46 +94,24 @@ class LocationService : Service() {
             startForeground(1, notificationBuilder.build())
         }
 
+        Log.d("Ubicacion", "Solicitando actualizaciones de ubicación al FusedLocationProviderClient")
+
         locationClient
             .getLocationUpdates(5000L)
-            .catch { it.printStackTrace() }
+            .catch { e ->
+                Log.e("Ubicacion", "Error en actualización de ubicación", e)
+            }
             .onEach { location ->
-
-                println("📍 Recibida nueva localización: ${location.latitude}, ${location.longitude}")
-                Toast.makeText(this, "Ubicación: ${location.latitude}, ${location.longitude}", Toast.LENGTH_SHORT).show()
+                Log.d("Ubicacion", "📍 Recibida nueva localización: ${location.latitude}, ${location.longitude}")
 
                 val client = OkHttpClient()
 
-                /*val jsonObj = JSONObject().apply {
-                    put("lat", location.latitude)
-                    put("lon", location.longitude)
+                val json = """
+                {
+                    "lat": ${location.latitude},
+                    "lon": ${location.longitude}
                 }
-                val json = jsonObj.toString()*/
-
-                val jsonObj = JSONObject().apply {
-                    put("lat", location.latitude)
-                    put("lon", location.longitude)
-                }
-                val json = jsonObj.toString()
-
-                println("📦 JSON generado: $json")  // <-- Log para depuración
-
-
-
-                /*val request = Request.Builder()
-                    .url("http://10.0.2.2:3001/update-location") // ✅ URL correcta para emulador
-                    .post(json.toRequestBody("application/json".toMediaType())) // ✅ Content-Type correcto
-                    .build()
-
-                client.newCall(request).enqueue(object : Callback {
-                    override fun onFailure(call: Call, e: IOException) {
-                        e.printStackTrace()
-                    }
-
-                    override fun onResponse(call: Call, response: Response) {
-                        println("✅ Ubicación enviada: $json")
-                    }
-                })*/
+            """.trimIndent()
 
                 val request = Request.Builder()
                     .url("http://10.0.2.2:3001/update-location")
@@ -135,15 +120,13 @@ class LocationService : Service() {
 
                 client.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
-                        println("❌ Error al enviar ubicación: ${e.message}")
+                        Log.e("Red", "Error enviando ubicación", e)
                     }
 
                     override fun onResponse(call: Call, response: Response) {
-                        println("✅ Código de respuesta: ${response.code}")
-                        println("✅ Cuerpo de respuesta: ${response.body?.string()}")
+                        Log.d("Red", "✅ Ubicación enviada correctamente: $json")
                     }
                 })
-
 
                 val lat = location.latitude
                 val lon = location.longitude
@@ -152,8 +135,6 @@ class LocationService : Service() {
                 notificationManager.notify(1, updatedNotification.build())
             }
             .launchIn(serviceScope)
-
-
     }
 
 
