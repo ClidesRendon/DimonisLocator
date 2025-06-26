@@ -22,19 +22,29 @@ function guardarUbicacion(lat, lon) {
     if (fs.existsSync(LOCATION_FILE)) {
       const fileContent = fs.readFileSync(LOCATION_FILE, 'utf8');
       data = JSON.parse(fileContent);
-
-      // Asegurarnos que es un array
-      if (!Array.isArray(data)) {
-        data = [];
-      }
+      if (!Array.isArray(data)) data = [];
     }
   } catch (error) {
     console.error('Error leyendo/parsing location.json:', error);
     data = [];
   }
 
-  // Añadir nueva ubicación con timestamp
-  data.push({ lat, lon, timestamp: Date.now() });
+  const nuevaUbicacion = { lat, lon, timestamp: Date.now() };
+
+  // Si ya hay datos, revisar la última entrada
+  if (data.length > 0) {
+    const ultima = data[data.length - 1];
+    if (ultima.lat === lat && ultima.lon === lon) {
+      // Solo actualiza el timestamp de la última entrada
+      ultima.timestamp = nuevaUbicacion.timestamp;
+    } else {
+      // Si es nueva ubicación, agregarla
+      data.push(nuevaUbicacion);
+    }
+  } else {
+    // Si no hay datos previos, guardar la nueva ubicación
+    data.push(nuevaUbicacion);
+  }
 
   try {
     fs.writeFileSync(LOCATION_FILE, JSON.stringify(data, null, 2));
