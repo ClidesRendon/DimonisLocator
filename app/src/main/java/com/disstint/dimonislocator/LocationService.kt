@@ -72,7 +72,7 @@ class LocationService : Service() {
 
 
     private fun start() {
-        Log.d("Ubicacion", "📡 Solicitud de actualizaciones de ubicación iniciada")
+        Log.d("Ubicacion", "Solicitud de actualizaciones de ubicación iniciada")
         Log.d("Ubicacion", "Permiso FINE LOCATION: ${ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)}")
         Log.d("Ubicacion", "Permiso COARSE LOCATION: ${ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)}")
 
@@ -102,7 +102,7 @@ class LocationService : Service() {
                 Log.e("Ubicacion", "Error en actualización de ubicación", e)
             }
             .onEach { location ->
-                Log.d("Ubicacion", "📍 Recibida nueva localización: ${location.latitude}, ${location.longitude}")
+                Log.d("Ubicacion", "Recibida nueva localización: ${location.latitude}, ${location.longitude}")
 
                 val client = OkHttpClient()
 
@@ -114,7 +114,7 @@ class LocationService : Service() {
             """.trimIndent()
 
                 val request = Request.Builder()
-                    .url("http://10.0.2.2:3001/update-location")
+                    .url("http://134.209.242.127:3001/update-location")
                     .post(json.toRequestBody("application/json".toMediaType()))
                     .build()
 
@@ -124,7 +124,7 @@ class LocationService : Service() {
                     }
 
                     override fun onResponse(call: Call, response: Response) {
-                        Log.d("Red", "✅ Ubicación enviada correctamente: $json")
+                        Log.d("Red", "Ubicación enviada correctamente: $json")
                     }
                 })
 

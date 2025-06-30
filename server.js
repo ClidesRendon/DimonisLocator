@@ -57,7 +57,7 @@ function guardarUbicacion(lat, lon) {
 // Endpoint POST raíz para compatibilidad con la app Android
 app.post('/', (req, res) => {
   const { lat, lon } = req.body;
-  console.log("📩 Coordenadas recibidas en /:", req.body);
+  console.log("Coordenadas recibidas en /:", req.body);
 
   if (typeof lat === 'number' && typeof lon === 'number') {
     guardarUbicacion(lat, lon);
@@ -70,7 +70,7 @@ app.post('/', (req, res) => {
 // Endpoint opcional para recibir datos en /update-location también
 app.post('/update-location', (req, res) => {
   const { lat, lon } = req.body;
-  console.log("📩 Coordenadas recibidas en /update-location:", req.body);
+  console.log("Coordenadas recibidas en /update-location:", req.body);
 
   if (typeof lat === 'number' && typeof lon === 'number') {
     guardarUbicacion(lat, lon);
@@ -92,10 +92,10 @@ app.get('/location.json', (req, res) => {
 // Limpiar el archivo location.json
 app.post('/clear-location', (req, res) => {
   fs.writeFileSync(LOCATION_FILE, JSON.stringify([]));
-  console.log("🧹 Ruta limpiada");
+  console.log("Ruta limpiada");
   res.send({ status: 'ruta limpiada' });
 });
 
 app.listen(PORT, '0.0.0.0',() => {
-  console.log(`🌍 Servidor iniciado en http://localhost:${PORT}`);
+  console.log(`Servidor en http://0.0.0.0:${PORT}`);
 });
