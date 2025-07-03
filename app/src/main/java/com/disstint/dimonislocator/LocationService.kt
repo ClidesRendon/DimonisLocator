@@ -114,7 +114,7 @@ class LocationService : Service() {
             """.trimIndent()
 
                 val request = Request.Builder()
-                    .url("http://134.209.242.127:3001/update-location")
+                    .url("https://santantonimanacor.disstintbeta.com/update-location")
                     .post(json.toRequestBody("application/json".toMediaType()))
                     .build()
 
