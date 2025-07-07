@@ -21,6 +21,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationServices // Asegúrate de que esta importación esté presente
+import kotlinx.coroutines.launch // Importar para usar corrutinas
+import kotlinx.coroutines.delay // Importar para usar delay
+import android.util.Log // Importar para usar Log.d
 
 class MainActivity : ComponentActivity() {
 
@@ -49,13 +52,12 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            // Estado para controlar si el servicio de localización está corriendo
-            var isServiceRunning by remember { mutableStateOf(isLocationServiceRunning()) }
+            // Estado para controlar si el seguimiento de localización está activo (enviando coordenadas)
+            // Se inicializa comprobando si el servicio está corriendo (lo que implica que estaba activo al iniciar la app)
+            var isTrackingActive by remember { mutableStateOf(isLocationServiceRunning()) }
 
-            // Efecto lanzado una vez para inicializar el estado del servicio
-            LaunchedEffect(Unit) {
-                isServiceRunning = isLocationServiceRunning()
-            }
+            // Scope de corrutinas para lanzar tareas asíncronas en el Composable
+            val scope = rememberCoroutineScope()
 
             // Columna principal para organizar los elementos de la UI
             Column(
@@ -65,12 +67,14 @@ class MainActivity : ComponentActivity() {
                 verticalArrangement = Arrangement.Center, // Centrar verticalmente
                 horizontalAlignment = Alignment.CenterHorizontally // Centrar horizontalmente
             ) {
-                // Texto que indica el estado del servicio
+                // Texto que indica el estado del seguimiento
                 Text(
-                    text = if (isServiceRunning) "Servicio activo" else "Servicio detenido",
+                    text = if (isTrackingActive) "Seguimiento activo" else "Seguimiento detenido",
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
+
+                Spacer(modifier = Modifier.height(16.dp)) // Espacio entre botones
 
                 // Botón "Arrancar Seguiment"
                 Button(
@@ -80,12 +84,12 @@ class MainActivity : ComponentActivity() {
                                 action = LocationService.ACTION_START
                                 ContextCompat.startForegroundService(applicationContext, this)
                             }
-                            isServiceRunning = true // Actualizar el estado a activo
+                            isTrackingActive = true // Actualizar el estado a activo
                         } else {
                             Toast.makeText(this@MainActivity, "Permisos no concedidos", Toast.LENGTH_LONG).show()
                         }
                     },
-                    enabled = !isServiceRunning // Habilitado si el servicio no está corriendo
+                    enabled = !isTrackingActive // Habilitado si el seguimiento no está activo
                 ) {
                     Text(text = "Arrancar Seguiment")
                 }
@@ -99,16 +103,16 @@ class MainActivity : ComponentActivity() {
                             action = LocationService.ACTION_STOP
                             ContextCompat.startForegroundService(applicationContext, this)
                         }
-                        isServiceRunning = false // Actualizar el estado a inactivo
+                        isTrackingActive = false // Actualizar el estado a inactivo
                     },
-                    enabled = isServiceRunning // Habilitado si el servicio está corriendo
+                    enabled = isTrackingActive // Habilitado si el seguimiento está activo
                 ) {
                     Text(text = "Aturar Seguiment")
                 }
 
                 Spacer(modifier = Modifier.height(16.dp)) // Espacio entre botones
 
-                //Botón "Borrar Coordenades"
+                // Botón "Borrar Coordenades"
                 Button(
                     onClick = {
                         // Enviar una intención para borrar las coordenadas
@@ -116,10 +120,23 @@ class MainActivity : ComponentActivity() {
                             action = LocationService.ACTION_CLEAR_LOCATION // Nueva acción
                             ContextCompat.startForegroundService(applicationContext, this)
                         }
-                        // Asumimos que al borrar, el servicio también se detiene
-                        isServiceRunning = false
                         Toast.makeText(this@MainActivity, "Enviando solicitud para borrar coordenadas...", Toast.LENGTH_SHORT).show()
-                    }
+
+                        // Si el seguimiento estaba activo, lo marcamos como inactivo porque el borrado lo detiene
+                        if (isTrackingActive) {
+                            isTrackingActive = false
+                            Log.d("MainActivity", "Seguimiento marcado como inactivo después de solicitud de borrado.")
+                        }
+
+                        // Re-evaluar el estado del servicio después de un breve retraso
+                        // Esto ayuda a que la UI refleje el estado real del servicio (si el proceso sigue vivo)
+                        // pero NO cambia el estado de 'isTrackingActive' aquí, para evitar activarlo falsamente.
+                        scope.launch {
+                            delay(500) // Pequeño retraso para permitir que el servicio procese la intención
+                            Log.d("MainActivity", "Proceso de servicio en ejecución después de solicitud de borrado: ${isLocationServiceRunning()}")
+                        }
+                    },
+                    enabled = true // El botón de borrar coordenadas siempre estará habilitado
                 ) {
                     Text(text = "Borrar Coordenades")
                 }
@@ -150,7 +167,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Función para verificar si el LocationService está corriendo
+    // Función para verificar si el LocationService está corriendo (el proceso)
     private fun isLocationServiceRunning(): Boolean {
         val manager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         return manager.getRunningServices(Int.MAX_VALUE).any {
@@ -176,4 +193,5 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
 

@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job // Importar Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.catch
@@ -39,6 +40,8 @@ class LocationService : Service() {
     private lateinit var locationClient: LocationClient
     private val httpClient = OkHttpClient() // Instancia única del cliente HTTP para todas las peticiones
 
+    private var locationUpdateJob: Job? = null // Job para controlar las actualizaciones de ubicación
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -61,7 +64,7 @@ class LocationService : Service() {
                 Log.d("LocationService", "Deteniendo seguimiento...")
                 stop()
             }
-            ACTION_CLEAR_LOCATION -> { // NUEVA ACCIÓN para borrar coordenadas
+            ACTION_CLEAR_LOCATION -> { // Acción para borrar coordenadas
                 Log.d("LocationService", "Solicitud de borrado de coordenadas...")
                 clearLocation()
             }
@@ -93,7 +96,9 @@ class LocationService : Service() {
 
         Log.d("Ubicacion", "Solicitando actualizaciones de ubicación al FusedLocationProviderClient")
 
-        locationClient
+        // Cancelar cualquier Job de actualización anterior antes de iniciar uno nuevo
+        locationUpdateJob?.cancel()
+        locationUpdateJob = locationClient
             .getLocationUpdates(5000L) // Intervalo de 5 segundos
             .catch { e ->
                 Log.e("Ubicacion", "Error en actualización de ubicación", e)
@@ -109,7 +114,7 @@ class LocationService : Service() {
                 }
             """.trimIndent()
 
-                // URL de servidor para actualizar la ubicación
+                // URL de tu servidor para actualizar la ubicación
                 // *** ASEGÚRATE DE QUE ESTA URL ES CORRECTA (HTTPS) ***
                 val request = Request.Builder()
                     .url("https://santantonimanacor.disstintbeta.com/update-location")
@@ -134,7 +139,7 @@ class LocationService : Service() {
                     .setContentText("Localización: ($lat, $lon)")
                 notificationManager.notify(1, updatedNotification.build())
             }
-            .launchIn(serviceScope)
+            .launchIn(serviceScope) // Lanzar la corrutina dentro del serviceScope
     }
 
     // Función para crear el canal de notificación (necesario en Android 8.0+)
@@ -150,24 +155,28 @@ class LocationService : Service() {
         }
     }
 
-    // Función para detener el servicio de localización
+    // Función para detener el servicio de localización COMPLETAMENTE
     private fun stop() {
-        serviceScope.cancel() // Cancela todas las corrutinas asociadas a este scope
-        stopForeground(true) // Detiene el servicio en primer plano
+        locationUpdateJob?.cancel() // Detener las actualizaciones de ubicación
+        locationUpdateJob = null // Limpiar la referencia al Job
+        stopForeground(true) // Detiene el servicio en primer plano y elimina la notificación
         stopSelf() // Detiene el propio servicio
-        Log.d("LocationService", "Servicio de localización detenido.")
+        Log.d("LocationService", "Servicio de localización detenido completamente.")
     }
 
-    // NUEVA FUNCIÓN: Borrar coordenadas en el servidor
+    // NUEVA FUNCIÓN: Borrar coordenadas en el servidor sin detener el servicio completamente
     private fun clearLocation() {
-        // Primero, detener el servicio de localización si está activo
-        stop()
+        // Detener solo las actualizaciones de ubicación si están activas
+        // No detener el servicio en primer plano ni el servicio en sí
+        locationUpdateJob?.cancel()
+        locationUpdateJob = null
+        Log.d("LocationService", "Actualizaciones de ubicación pausadas para borrado.")
 
         // URL de tu servidor para borrar las coordenadas
         // *** ASEGÚRATE DE QUE ESTA URL ES CORRECTA (HTTPS) ***
         val request = Request.Builder()
             .url("https://santantonimanacor.disstintbeta.com/clear-location")
-            // FIX: Usar RequestBody.create(null, ByteArray(0)) para un cuerpo POST vacío
+            // Cuerpo de petición POST vacío, compatible con diferentes versiones de OkHttp
             .post(RequestBody.create(null, ByteArray(0)))
             .build()
 
@@ -183,6 +192,8 @@ class LocationService : Service() {
                 Toast.makeText(applicationContext, "Coordenadas borradas", Toast.LENGTH_SHORT).show()
             }
         })
+        // No se llama a stopForeground(true) ni stopSelf() aquí
+        // para que el servicio siga ejecutándose y la app no se minimice.
     }
 
     override fun onDestroy() {
