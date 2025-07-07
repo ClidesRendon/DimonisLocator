@@ -23,12 +23,13 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import okhttp3.Call
 import okhttp3.Callback
+import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
-import org.json.JSONObject
 import java.io.IOException
 
 
@@ -36,22 +37,17 @@ class LocationService : Service() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var locationClient: LocationClient
+    private val httpClient = OkHttpClient() // Instancia única del cliente HTTP para todas las peticiones
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-
-
     override fun onCreate() {
-
-
-
         super.onCreate()
         locationClient = DefaultLocationClient(
             applicationContext,
             LocationServices.getFusedLocationProviderClient(applicationContext)
         )
     }
-
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("LocationService", "onStartCommand recibido: ${intent?.action}")
@@ -65,24 +61,25 @@ class LocationService : Service() {
                 Log.d("LocationService", "Deteniendo seguimiento...")
                 stop()
             }
+            ACTION_CLEAR_LOCATION -> { // NUEVA ACCIÓN para borrar coordenadas
+                Log.d("LocationService", "Solicitud de borrado de coordenadas...")
+                clearLocation()
+            }
         }
         return START_STICKY
     }
-
-
 
     private fun start() {
         Log.d("Ubicacion", "Solicitud de actualizaciones de ubicación iniciada")
         Log.d("Ubicacion", "Permiso FINE LOCATION: ${ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)}")
         Log.d("Ubicacion", "Permiso COARSE LOCATION: ${ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)}")
 
-
         createNotificationChannel()
 
         val notificationBuilder = NotificationCompat.Builder(this, "location")
             .setContentTitle("Tracking location...")
             .setContentText("Location: null")
-            .setSmallIcon(R.drawable.ic_launcher_background)
+            .setSmallIcon(R.drawable.ic_launcher_background) // Asegúrate de que este recurso exista
             .setOngoing(true)
 
         val notificationManager =
@@ -97,14 +94,13 @@ class LocationService : Service() {
         Log.d("Ubicacion", "Solicitando actualizaciones de ubicación al FusedLocationProviderClient")
 
         locationClient
-            .getLocationUpdates(5000L)
+            .getLocationUpdates(5000L) // Intervalo de 5 segundos
             .catch { e ->
                 Log.e("Ubicacion", "Error en actualización de ubicación", e)
+                // Puedes mostrar un Toast o notificación de error aquí
             }
             .onEach { location ->
                 Log.d("Ubicacion", "Recibida nueva localización: ${location.latitude}, ${location.longitude}")
-
-                val client = OkHttpClient()
 
                 val json = """
                 {
@@ -113,18 +109,22 @@ class LocationService : Service() {
                 }
             """.trimIndent()
 
+                // URL de servidor para actualizar la ubicación
+                // *** ASEGÚRATE DE QUE ESTA URL ES CORRECTA (HTTPS) ***
                 val request = Request.Builder()
                     .url("https://santantonimanacor.disstintbeta.com/update-location")
                     .post(json.toRequestBody("application/json".toMediaType()))
                     .build()
 
-                client.newCall(request).enqueue(object : Callback {
+                httpClient.newCall(request).enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
                         Log.e("Red", "Error enviando ubicación", e)
+                        // Toast.makeText(applicationContext, "Error de red al enviar ubicación", Toast.LENGTH_SHORT).show()
                     }
 
                     override fun onResponse(call: Call, response: Response) {
-                        Log.d("Red", "Ubicación enviada correctamente: $json")
+                        Log.d("Red", "Ubicación enviada correctamente. Código: ${response.code}")
+                        response.close() // Cerrar la respuesta para liberar recursos
                     }
                 })
 
@@ -137,7 +137,7 @@ class LocationService : Service() {
             .launchIn(serviceScope)
     }
 
-
+    // Función para crear el canal de notificación (necesario en Android 8.0+)
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -150,22 +150,50 @@ class LocationService : Service() {
         }
     }
 
+    // Función para detener el servicio de localización
     private fun stop() {
-        stopForeground(true)
-        stopSelf()
+        serviceScope.cancel() // Cancela todas las corrutinas asociadas a este scope
+        stopForeground(true) // Detiene el servicio en primer plano
+        stopSelf() // Detiene el propio servicio
+        Log.d("LocationService", "Servicio de localización detenido.")
+    }
+
+    // NUEVA FUNCIÓN: Borrar coordenadas en el servidor
+    private fun clearLocation() {
+        // Primero, detener el servicio de localización si está activo
+        stop()
+
+        // URL de tu servidor para borrar las coordenadas
+        // *** ASEGÚRATE DE QUE ESTA URL ES CORRECTA (HTTPS) ***
+        val request = Request.Builder()
+            .url("https://santantonimanacor.disstintbeta.com/clear-location")
+            // FIX: Usar RequestBody.create(null, ByteArray(0)) para un cuerpo POST vacío
+            .post(RequestBody.create(null, ByteArray(0)))
+            .build()
+
+        httpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e("Red", "Error al borrar ubicación en el servidor", e)
+                Toast.makeText(applicationContext, "Error al borrar coordenadas", Toast.LENGTH_SHORT).show()
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                Log.d("Red", "Coordenadas borradas correctamente. Código: ${response.code}")
+                response.close() // Cerrar la respuesta
+                Toast.makeText(applicationContext, "Coordenadas borradas", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        serviceScope.cancel()
+        serviceScope.cancel() // Asegurarse de cancelar el scope si el servicio se destruye
+        Log.d("LocationService", "Servicio destruido.")
     }
 
     companion object {
         const val ACTION_START = "ACTION_START"
         const val ACTION_STOP = "ACTION_STOP"
+        const val ACTION_CLEAR_LOCATION = "ACTION_CLEAR_LOCATION" // Nueva constante de acción
     }
-
 }
-
-
-
