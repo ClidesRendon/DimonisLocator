@@ -22,7 +22,7 @@
   // Inicialización del mapa y marcador
   // Centrado en Manacor con un zoom adecuado
   const map = L.map('map').setView([39.5699516, 3.2154751], 10);
-  const marker = L.marker([39.5699516, 3.2154751]).addTo(map);
+  const marker = L.marker([39.5699516, 3.2154751]).addTo(map).setStyle({fillColor: 'black'});
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
