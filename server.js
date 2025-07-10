@@ -14,6 +14,9 @@ app.use(express.static('public'));
 
 const LOCATION_FILE = path.join(__dirname, '/location.json');
 
+
+
+
 // Función para guardar ubicación
 function guardarUbicacion(lat, lon) {
   let data = [];

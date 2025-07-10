@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ButtonDefaults // Importar ButtonDefaults para colores
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,6 +25,7 @@ import com.google.android.gms.location.LocationServices // Asegúrate de que est
 import kotlinx.coroutines.launch // Importar para usar corrutinas
 import kotlinx.coroutines.delay // Importar para usar delay
 import android.util.Log // Importar para usar Log.d
+import androidx.compose.ui.graphics.Color // Importar para usar colores personalizados
 
 class MainActivity : ComponentActivity() {
 
@@ -59,6 +61,10 @@ class MainActivity : ComponentActivity() {
             // Scope de corrutinas para lanzar tareas asíncronas en el Composable
             val scope = rememberCoroutineScope()
 
+            // Definición de colores personalizados para los botones
+            // Todos los botones ahora serán de color negro
+            val buttonColor = Color.Black // Color negro para todos los botones
+
             // Columna principal para organizar los elementos de la UI
             Column(
                 modifier = Modifier
@@ -69,7 +75,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 // Texto que indica el estado del seguimiento
                 Text(
-                    text = if (isTrackingActive) "Seguimiento activo" else "Seguimiento detenido",
+                    text = if (isTrackingActive) "Seguiment activo" else "Seguiment detenido",
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
@@ -89,7 +95,8 @@ class MainActivity : ComponentActivity() {
                             Toast.makeText(this@MainActivity, "Permisos no concedidos", Toast.LENGTH_LONG).show()
                         }
                     },
-                    enabled = !isTrackingActive // Habilitado si el seguimiento no está activo
+                    enabled = !isTrackingActive, // Habilitado si el seguimiento no está activo
+                    colors = ButtonDefaults.buttonColors(containerColor = buttonColor) // Aplicar color negro
                 ) {
                     Text(text = "Arrancar Seguiment")
                 }
@@ -105,7 +112,8 @@ class MainActivity : ComponentActivity() {
                         }
                         isTrackingActive = false // Actualizar el estado a inactivo
                     },
-                    enabled = isTrackingActive // Habilitado si el seguimiento está activo
+                    enabled = isTrackingActive, // Habilitado si el seguimiento está activo
+                    colors = ButtonDefaults.buttonColors(containerColor = buttonColor) // Aplicar color negro
                 ) {
                     Text(text = "Aturar Seguiment")
                 }
@@ -136,7 +144,8 @@ class MainActivity : ComponentActivity() {
                             Log.d("MainActivity", "Proceso de servicio en ejecución después de solicitud de borrado: ${isLocationServiceRunning()}")
                         }
                     },
-                    enabled = true // El botón de borrar coordenadas siempre estará habilitado
+                    enabled = true, // El botón de borrar coordenadas siempre estará habilitado
+                    colors = ButtonDefaults.buttonColors(containerColor = buttonColor) // Aplicar color negro
                 ) {
                     Text(text = "Borrar Coordenades")
                 }
@@ -193,5 +202,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-
