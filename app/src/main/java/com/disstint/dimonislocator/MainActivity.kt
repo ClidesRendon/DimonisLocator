@@ -75,7 +75,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 // Texto que indica el estado del seguimiento
                 Text(
-                    text = if (isTrackingActive) "Seguiment activo" else "Seguiment detenido",
+                    text = if (isTrackingActive) "Seguiment actiu" else "Seguiment aturat",
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
